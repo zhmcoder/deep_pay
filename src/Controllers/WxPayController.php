@@ -24,21 +24,24 @@ class WxPayController extends PayController
             $appId = $request->input('app_id');
             $source = $request->input('source', Member::SOURCE_WX);
             $amount = $request->input('amount', 1);
+            $orderId = $request->input('order_id');
 
-            $userInfo = ['id' => 19];//$this->userInfo();
+            $userInfo = $this->userInfo();
             $userInfo['openid'] = UcenterMember::query()->where(['id' => $userInfo['id']])->value('openid');
 
             $this->wx_pay($userInfo, $source);
 
-            $orderItem = $this->order_item($userInfo);
+            $orderItem = $this->order_item($userInfo, $orderId, $amount);
             $goodsSku = $this->goods_sku($orderItem, $amount);
 
             $order = $this->order($userInfo['id'], $orderItem, $goodsSku);
 
             if (!empty($order)) {
                 $out_trade_no = $order['out_trade_no'];
+                debug_log_info('old out_trade_no: ' . $out_trade_no);
             } else {
                 $out_trade_no = PayService::out_trade_no($userInfo['id'], $goodsSku, time());
+                debug_log_info('new out_trade_no: ' . $out_trade_no);
             }
 
             $attach = [

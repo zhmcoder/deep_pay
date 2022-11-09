@@ -2,11 +2,19 @@
 
 namespace Andruby\Pay\Services;
 
+use Andruby\DeepGoods\Models\GoodsSku;
+use Andruby\DeepGoods\Models\GoodsSkuStock;
 use Andruby\Pay\Models\AliOrder;
+use App\Api\Services\PrecedenceOrderService;
+use App\Models\Address;
+use App\Models\Goods;
+use App\Models\Member;
 use App\Models\OrderItem;
 use App\Models\Order;
 use Andruby\Pay\Models\WxOrder;
 use Andruby\Pay\Models\WxPreorder;
+use App\Models\PrecedenceOrder;
+use App\Services\ChainService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +44,6 @@ class PayService
      * @param int $status
      * @param int $type
      * @param null $app_id
-     * @param int $amount
      * @return array|null
      */
     public static function create_order($user_id, $out_trade_no, $buy_info, $pre_order_id = 0, $transaction_id = 0, $pay_type = Order::PAY_WX_PAY, $status = Order::STATUS_WAITING, $type = OrderItem::RES_TYPE_PAY, $app_id = null, $amount = 1)
@@ -45,10 +52,22 @@ class PayService
         try {
             $order_sn = date('YmdHis') . $user_id;
 
+            $addressId = request('address_id');
+            $addressInfo = [];//Address::query()->find($addressId);
+            if (!empty($addressInfo)) {
+                $consignee = $addressInfo['consignee'];
+                $phone = $addressInfo['phone'];
+                $address = $addressInfo['address'];
+            } else {
+                $consignee = request('consignee');
+                $phone = request('cellphone');
+                $address = request('address');
+            }
+
             $order = [
                 'user_id' => $user_id,
-                'pay_fee' => $buy_info['pay_fee'],
-                'status' => $status,
+                'pay_amount' => $buy_info['pay_fee'],
+                'order_status' => $status,
                 'pre_order_id' => $pre_order_id,
                 'out_trade_no' => $out_trade_no,
                 'transaction_id' => $transaction_id,
@@ -57,9 +76,9 @@ class PayService
                 'app_id' => $app_id ?: request('app_id'),
                 'order_sn' => $order_sn,
                 'type' => $type,
-                'consignee' => request('consignee'),
-                'cellphone' => request('cellphone'),
-                'address' => request('address'),
+                'consignee' => $consignee,
+                'cellphone' => $phone,
+                'address' => $address,
                 'breaks' => request('breaks'),
             ];
 
@@ -90,21 +109,42 @@ class PayService
      * @param $order_id
      * @param $user_id
      * @param $buy_info
-     * @param $app_id
      * @param int $pay_status
      * @param int $res_type
-     * @param int $amount
+     * @param $app_id
      * @return Builder|Model|OrderItem|null
      */
     public static function create_order_item($order_id, $user_id, $buy_info, $app_id, $pay_status = Order::STATUS_WAITING, $res_type = OrderItem::RES_TYPE_PAY, $amount = 1)
     {
+        $where = ['id' => request('goods_id')];
+        $where[] = ['goods_id', '>', 0];
+        $goodsInfo = [];//Goods::query()->where($where)->first();
+        $help_sell_id = $help_sell_goods_id = 0;
+        if (!empty($goodsInfo)) {
+            $help_sell_id = $goodsInfo['add_user_id'];
+            $help_sell_goods_id = request('goods_id');
+        }
+
+        // 计算佣金
+        if ($help_sell_id) {
+            if ($buy_info['help_commission_type'] == 2) {
+                $rebate_price = round($buy_info['help_commission_price'] * $amount, 2);
+            } else {
+                $rebate_price = round($buy_info['help_commission_ratio'] * $buy_info['price'] * $amount / 100, 2);
+            }
+        } else {
+            $rebate_price = 0;
+        }
+
+        $group_number = OrderItem::query()->where(['goods_id' => $buy_info['goods_id']])->count();
+
         $orderItem = [
             'order_id' => $order_id,
             'user_id' => $user_id,
             'goods_id' => $buy_info['goods_id'],
             'sku_id' => $buy_info['id'],
-            'name' => $buy_info['name'],
-            'image' => $buy_info['image'] ?? '',
+            'goods_name' => $buy_info['name'],
+            'image_url' => $buy_info['image'] ?? '',
             'goods_type' => $buy_info['goods_type'],
             'price' => $buy_info['price'],
             'amount' => $amount,
@@ -130,7 +170,13 @@ class PayService
      */
     public static function stock($buy_info, $amount)
     {
-        // todo 更新库存
+        $data = GoodsSkuStock::query()->where(['sku_id' => $buy_info['id']])->decrement('quantity', $amount);
+        if ($data) {
+            GoodsSku::query()->where(['id' => $buy_info['id']])->increment('sold_num', $amount);
+            return $data;
+        } else {
+            return null;
+        }
     }
 
     /**

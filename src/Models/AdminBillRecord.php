@@ -62,6 +62,10 @@ class AdminBillRecord extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'updated_at' => "Y-m-d H:i:s",
+    ];
+
     protected $hidden = [];
 
     const BILL_RECORD_TYPE = [
