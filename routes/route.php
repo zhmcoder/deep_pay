@@ -9,7 +9,7 @@ Route::group([
     // 'middleware' => 'App\\Api\\Middleware\\verifySign' // todo 签名
 ], function (Router $router) {
     // 微信支付
-    $router->get('WxPay/pay', 'WxPayController@pay')->name('wx.pay');// 支付宝支付
+    $router->post('WxPay/pay', 'WxPayController@pay')->name('wx.pay');// 支付宝支付
     $router->post('AliPay/pay', 'AliPayController@pay')->name('AliPay.pay');
     $router->post('Order/refund', 'WxPayController@refund')->name('Order.refund');
 
