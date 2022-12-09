@@ -80,6 +80,8 @@ class PayService
                 'consignee' => $consignee,
                 'cellphone' => $phone,
                 'address' => $address,
+                'travel_date' => request('travel_date', ''),
+                'travel_num' => request('travel_num', 0),
                 'breaks' => request('breaks'),
             ];
 
