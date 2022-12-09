@@ -31,7 +31,7 @@ class WxPayController extends PayController
 
             $this->wx_pay($userInfo, $source);
 
-            $orderItem = $this->order_item($userInfo, $orderId, $amount);
+            $orderItem = [];//$this->order_item($userInfo, $orderId, $amount);
             $goodsSku = $this->goods_sku($orderItem, $amount);
 
             $order = $this->order($userInfo['id'], $orderItem, $goodsSku);
