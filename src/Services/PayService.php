@@ -13,6 +13,7 @@ use App\Models\OrderItem;
 use App\Models\Order;
 use Andruby\Pay\Models\WxOrder;
 use Andruby\Pay\Models\WxPreorder;
+use App\Models\OrderTravel;
 use App\Models\PrecedenceOrder;
 use App\Services\ChainService;
 use Illuminate\Database\Eloquent\Builder;
@@ -83,8 +84,22 @@ class PayService
             ];
 
             $orderInfo = Order::query()->create($order);
-
             $order_id = $orderInfo['id'];
+
+            // 同行人信息
+            $orderTravel = json_decode(request('order_travel'), true);
+            if (!empty($orderTravel)) {
+                foreach ($orderTravel as $travel) {
+                    $data = [
+                        'name' => $travel['name'] ?? '',
+                        'phone' => $travel['phone'] ?? '',
+                        'identity_card' => $travel['identity_card'] ?? '',
+                        'order_id' => $order_id,
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ];
+                    OrderTravel::query()->insert($data);
+                }
+            }
 
             $orderItemInfo = self::create_order_item($order_id, $user_id, $buy_info, $app_id, $status, $type, $amount);
 
