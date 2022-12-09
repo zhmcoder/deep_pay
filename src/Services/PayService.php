@@ -266,7 +266,7 @@ class PayService
             'pre_order_id' => $preOrderInfo['id'],
             'transaction_id' => $resource['transaction_id'],
             'order_status' => Order::STATUS_SUCCESS,
-            'pay_time' => date('Y-m-d H:i:s', strtotime($resource['success_time'])),
+            'pay_time' => strtotime($resource['success_time']),
             'pay_type' => Order::PAY_WX_PAY,
         ];
         $orderRes = Order::query()->where(['out_trade_no' => $out_trade_no])->update($order);
