@@ -285,7 +285,7 @@ class PayService
         OrderItem::query()->where(['order_id' => $orderInfo['id']])->update($orderItemData);
         wx_pay_log('wx notify order_item data = ' . json_encode($orderItemData));
 
-        SettlementService::instance()->order_rebate($orderInfo['id'], $orderInfo['pay_fee'], $orderItem);
+        // SettlementService::instance()->order_rebate($orderInfo['id'], $orderInfo['pay_fee'], $orderItem);
 
         return true;
     }
@@ -362,7 +362,7 @@ class PayService
         ali_pay_log('ali notify order_item data = ' . json_encode($orderItemData));
 
         // 订单分佣
-        SettlementService::instance()->order_rebate($orderInfo['id'], $orderInfo['pay_fee'], $orderItem);
+        // SettlementService::instance()->order_rebate($orderInfo['id'], $orderInfo['pay_fee'], $orderItem);
 
         return true;
     }
