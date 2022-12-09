@@ -75,6 +75,7 @@ class PayService
                 'pay_type' => $pay_type,
                 'refund_status' => 1,
                 'app_id' => $app_id ?: request('app_id'),
+                'order_num' => $order_sn,
                 'order_sn' => $order_sn,
                 'type' => $type,
                 'consignee' => $consignee,
