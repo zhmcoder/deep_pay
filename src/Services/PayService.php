@@ -262,10 +262,10 @@ class PayService
 
         // 更新订单
         $order = [
-            'pay_fee' => $resource['amount']['total'] / 100,
+            'pay_amount' => $resource['amount']['total'] / 100,
             'pre_order_id' => $preOrderInfo['id'],
             'transaction_id' => $resource['transaction_id'],
-            'status' => Order::STATUS_SUCCESS,
+            'order_status' => Order::STATUS_SUCCESS,
             'pay_time' => date('Y-m-d H:i:s', strtotime($resource['success_time'])),
             'pay_type' => Order::PAY_WX_PAY,
         ];
